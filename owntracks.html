@@ -1,0 +1,29 @@
+<script type="text/x-red" data-template-name="owntracks">
+	<div class="form-row">
+		<label for="node-input-secret"><i class="fa fa-tasks"></i> Secret</label>
+    	<input type="text" id="node-input-secret" placeholder="secret">
+	</div>
+</script>
+
+<script type="text/x-red" data-help-name="owntracks">
+	<p>A node to decrypt encrypted Owntracks Location messages</p>
+</script>
+
+<script type="text/javascript">
+	RED.nodes.registerType("owntracks",{
+		category: 'location',
+		defaults: {
+
+		},
+		inputs: 1,
+		outputs: 1,
+		label: 'Owntracks',
+		icon: 'owntracks.png',
+		color: '#478DB2',
+		credentials:{
+			secret: {
+				type:'text'
+			}
+		}
+	});
+</script>

@@ -1,0 +1,27 @@
+{
+  "name": "node-red-contrib-owntracks",
+  "version": "0.0.1",
+  "description": "Converts Owntrack Messages into standard Node-RED goe message and deals with encrypted locations",
+  "main": "owntracks.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "owntracks",
+    "node-red"
+  ],
+  "author": {
+    "email": "hardillb@gmail.com",
+    "name": "Benjamin Hardill",
+    "url": "http://www.hardill.me.uk/wordpress/"
+  },
+  "license": "Apache-2.0",
+  "node-red": {
+    "nodes": {
+      "owntracks": "owntracks.js"
+    }
+  },
+  "dependencies": {
+    "libsodium-wrappers": "^0.3.0"
+  }
+}
