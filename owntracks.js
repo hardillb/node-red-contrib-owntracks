@@ -21,61 +21,61 @@ module.exports = function(RED) {
     var owntracks = function(n) {
         RED.nodes.createNode(this,n);
         var node = this;
-        var secret = this.credentials.secret;
+        node.secret = this.credentials.secret;
+        node.topic = n.topic;
+        node.broker = RED.nodes.getNode(n.broker);
 
-        this.on('input',function(msg){
-            if (typeof msg.payload === 'string') {
+        if(node.broker) {
+          node.broker.register(this);
+          node.broker.subscribe(node.topic, 0, function(topic, payload, packet) {
+            var msg = {topic:topic, payload:payload, qos: packet.qos, retain: packet.retain};
+            msg.payload = JSON.parse(msg.payload);
+            if(msg.payload._type === 'encrypted') {
+              if(node.secret) {
+                var cypherText = new Buffer(msg.payload.data, 'base64');
+                var nonce = cypherText.slice(0,24);
+                var key = new Buffer(32);
+                var clearText, clearObj;
+                key.fill(0);
+                key.write(node.secret);
                 try {
-                    msg.payload = JSON.parse(msg.payload);
+                    clearText = sodium.crypto_secretbox_open_easy(cypherText.slice(24),nonce,key,"text");
                 } catch (e) {
-                    node.warn("String payload is not JSON");
+                    node.warn("error decrypting payload");
                     return;
                 }
-            }
-
-            if (msg.payload._type) {
-                if (msg.payload._type === 'encrypted') {
-                    if (secret) {
-                        var cypherText = new Buffer(msg.payload.data, 'base64');
-                        var nonce = cypherText.slice(0,24);
-                        var key = new Buffer(32);
-                        key.fill(0);
-                        key.write(secret);
-                        try {
-                            var clearText = sodium.crypto_secretbox_open_easy(cypherText.slice(24),nonce,key,"text");
-                        } catch (e) {
-                            node.warn("error decrypting payload");
-                            return;
-                        }
-                        try{
-                            var clearObj = JSON.parse(clearText);
-                        } catch (e) {
-                            node.warn("decrypted message not JSON");
-                            return;
-                        }
-                        msg.payload = clearObj;
-                    } else {
-                        node.status({fill:'red',shape:'dot',text:'No secret'});
-                        node.send(msg);
-                        return;
-                    }
+                try{
+                    clearObj = JSON.parse(clearText);
+                } catch (e) {
+                    node.warn("decrypted message not JSON");
+                    return;
                 }
-                if (msg.payload._type === 'location') {
-                    msg.location = {
-                        lat: msg.payload.lat,
-                        lon: msg.payload.lon,
-                        name: msg.payload.tid
-                    };
-                    msg.payload.name = msg.payload.name || msg.payload.tid;
-                }
+                msg.payload = clearObj;
+              } else {
+                node.warn("No secret provided.");
+                return;
+              }
             }
-
+            if (msg.payload._type === 'location') {
+                msg.location = {
+                    lat: msg.payload.lat,
+                    lon: msg.payload.lon,
+                    name: msg.payload.tid
+                };
+                msg.payload.name = msg.payload.name || msg.payload.tid;
+            }
             node.send(msg);
+          }, node.id);
 
-        });
-
+          node.on('close', function(done) {
+            if(node.broker) {
+              node.broker.unsubscribe(node.topic, node.id);
+              node.broker.deregister(node, done);
+            }
+          });
+        }
     };
     RED.nodes.registerType("owntracks", owntracks, { credentials: {
         secret: {type: 'text'}
     }});
-}
+};
