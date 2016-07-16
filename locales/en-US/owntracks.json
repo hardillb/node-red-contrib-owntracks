@@ -1,0 +1,12 @@
+{
+  "common": {
+    "status": {
+        "connected": "connected",
+        "not-connected": "not connected",
+        "disconnected": "disconnected",
+        "connecting": "connecting",
+        "error": "error",
+        "ok": "OK"
+    }
+  }
+}
